@@ -27,10 +27,10 @@ ZONE=${KUBE_GCE_ZONE:-us-central1-b}
 REGION=${ZONE%-*}
 RELEASE_REGION_FALLBACK=${RELEASE_REGION_FALLBACK:-false}
 REGIONAL_KUBE_ADDONS=${REGIONAL_KUBE_ADDONS:-true}
-NODE_SIZE=${NODE_SIZE:-n1-standard-2}
-NUM_NODES=${NUM_NODES:-3}
+NODE_SIZE=${NODE_SIZE:-n1-standard-8}
+NUM_NODES=${BLAH_NUM_NODES:-7}
 NUM_WINDOWS_NODES=${NUM_WINDOWS_NODES:-0}
-MASTER_SIZE=${MASTER_SIZE:-n1-standard-$(get-master-size)}
+MASTER_SIZE=${MASTER_SIZE:-n1-standard-4}
 MASTER_MIN_CPU_ARCHITECTURE=${MASTER_MIN_CPU_ARCHITECTURE:-} # To allow choosing better architectures.
 MASTER_DISK_TYPE=pd-ssd
 MASTER_DISK_SIZE=${MASTER_DISK_SIZE:-$(get-master-disk-size)}
@@ -83,7 +83,7 @@ fi
 # you are updating the os image versions, update this variable.
 # Also please update corresponding image for node e2e at:
 # https://github.com/kubernetes/kubernetes/blob/master/test/e2e_node/jenkins/image-config.yaml
-GCI_VERSION=${KUBE_GCI_VERSION:-cos-77-12371-175-0}
+GCI_VERSION=${KUBE_GCI_VERSION:-cos-77-12371-114-0}
 MASTER_IMAGE=${KUBE_GCE_MASTER_IMAGE:-}
 MASTER_IMAGE_PROJECT=${KUBE_GCE_MASTER_PROJECT:-cos-cloud}
 NODE_IMAGE=${KUBE_GCE_NODE_IMAGE:-${GCI_VERSION}}

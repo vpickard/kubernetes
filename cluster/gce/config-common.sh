@@ -125,6 +125,7 @@ function get-alias-range-size() {
 }
 # NOTE: Avoid giving nodes empty scopes, because kubelet needs a service account
 # in order to initialize properly.
+NODE_SCOPES=cloud-platform
 NODE_SCOPES="${NODE_SCOPES:-monitoring,logging-write,storage-ro}"
 
 # Below exported vars are used in cluster/gce/util.sh (or maybe somewhere else),

@@ -23,14 +23,16 @@ source "${KUBE_ROOT}/cluster/gce/config-common.sh"
 # This endpoint has to be pointing to v1 api. For example, https://www.googleapis.com/compute/staging_v1/
 GCE_API_ENDPOINT=${KUBE_GCE_API_ENDPOINT:-}
 GCLOUD=gcloud
+KUBE_GCE_ZONE=us-east1-c
 ZONE=${KUBE_GCE_ZONE:-us-central1-b}
 REGION=${ZONE%-*}
 RELEASE_REGION_FALLBACK=${RELEASE_REGION_FALLBACK:-false}
 REGIONAL_KUBE_ADDONS=${REGIONAL_KUBE_ADDONS:-true}
-NODE_SIZE=${NODE_SIZE:-n1-standard-2}
-NUM_NODES=${NUM_NODES:-3}
+NODE_SIZE=${NODE_SIZE:-n1-standard-8}
+NUM_NODES=${BLAH_NUM_NODES:-7}
+echo "NUM_NODES is ${NUM_NODES}" >&2
 NUM_WINDOWS_NODES=${NUM_WINDOWS_NODES:-0}
-MASTER_SIZE=${MASTER_SIZE:-n1-standard-$(get-master-size)}
+MASTER_SIZE=${MASTER_SIZE:-n1-standard-4}
 MASTER_MIN_CPU_ARCHITECTURE=${MASTER_MIN_CPU_ARCHITECTURE:-} # To allow choosing better architectures.
 MASTER_DISK_TYPE=pd-ssd
 MASTER_DISK_SIZE=${MASTER_DISK_SIZE:-$(get-master-disk-size)}
@@ -43,7 +45,8 @@ WINDOWS_NODE_LABELS="${WINDOWS_NODE_LABELS:-}"
 
 # KUBE_CREATE_NODES can be used to avoid creating nodes, while master will be sized for NUM_NODES nodes.
 # Firewalls and node templates are still created.
-KUBE_CREATE_NODES="${KUBE_CREATE_NODES:-true}"
+KUBE_CREATE_NODES=true
+echo "KUBE_CREATES_NODES ${KUBE_CREATE_NODES}" >&2
 
 # An extension to local SSDs allowing users to specify block/fs and SCSI/NVMe devices
 # Format of this variable will be "#,scsi/nvme,block/fs" you can specify multiple
@@ -63,6 +66,7 @@ KUBE_DELETE_NODES=${KUBE_DELETE_NODES:-true}
 KUBE_DELETE_NETWORK=${KUBE_DELETE_NETWORK:-true}
 CREATE_CUSTOM_NETWORK=${CREATE_CUSTOM_NETWORK:-false}
 MIG_WAIT_UNTIL_STABLE_TIMEOUT=${MIG_WAIT_UNTIL_STABLE_TIMEOUT:-1800}
+# MAX_INSTANCES_PER_MIG=1
 
 MASTER_OS_DISTRIBUTION=${KUBE_MASTER_OS_DISTRIBUTION:-${KUBE_OS_DISTRIBUTION:-gci}}
 NODE_OS_DISTRIBUTION=${KUBE_NODE_OS_DISTRIBUTION:-${KUBE_OS_DISTRIBUTION:-gci}}
@@ -95,7 +99,9 @@ MASTER_IMAGE=${KUBE_GCE_MASTER_IMAGE:-}
 MASTER_IMAGE_PROJECT=${KUBE_GCE_MASTER_PROJECT:-cos-cloud}
 NODE_IMAGE=${KUBE_GCE_NODE_IMAGE:-${GCI_VERSION}}
 NODE_IMAGE_PROJECT=${KUBE_GCE_NODE_PROJECT:-cos-cloud}
+KUBE_GCE_NODE_SERVICE_ACCOUNT=aos-serviceaccount@openshift-gce-devel.iam.gserviceaccount.com
 NODE_SERVICE_ACCOUNT=${KUBE_GCE_NODE_SERVICE_ACCOUNT:-default}
+echo "NODE_SERVICE_ACCOUNT is ${NODE_SERVICE_ACCOUNT}" >&2
 
 CONTAINER_RUNTIME=${KUBE_CONTAINER_RUNTIME:-docker}
 CONTAINER_RUNTIME_ENDPOINT=${KUBE_CONTAINER_RUNTIME_ENDPOINT:-}

@@ -86,17 +86,20 @@ function delete-kubemark-image {
 # templates, and finally create these resources through kubectl.
 function create-kube-hollow-node-resources {
   # Create kubemark namespace.
-  "${KUBECTL}" create -f "${RESOURCE_DIRECTORY}/kubemark-ns.json"
+  echo -e "${color_yellow}CREATING KUBEMARK NS with ${KUBECTL} create -f ${RESOURCE_DIRECTORY}/kubemark-ns.json${color_norm}"
+  "${KUBECTL}" --kubeconfig="${LOCAL_KUBECONFIG}" create -f "${RESOURCE_DIRECTORY}/kubemark-ns.json"
 
   # Create configmap for configuring hollow- kubelet, proxy and npd.
-  "${KUBECTL}" create configmap "node-configmap" --namespace="kubemark" \
+  echo -e "${color_yellow}CREATING KUBEMARK CONFIGMAP${color_norm}"
+  "${KUBECTL}" --kubeconfig="${LOCAL_KUBECONFIG}" create configmap "node-configmap" --namespace="kubemark" \
     --from-literal=content.type="${TEST_CLUSTER_API_CONTENT_TYPE}" \
     --from-file=kernel.monitor="${RESOURCE_DIRECTORY}/kernel-monitor.json"
 
   # Create secret for passing kubeconfigs to kubelet, kubeproxy and npd.
   # It's bad that all component shares the same kubeconfig.
   # TODO(https://github.com/kubernetes/kubernetes/issues/79883): Migrate all components to separate credentials.
-  "${KUBECTL}" create secret generic "kubeconfig" --type=Opaque --namespace="kubemark" \
+  echo -e "${color_yellow}CREATING KUBEMARK SECRET${color_norm}"
+  "${KUBECTL}" --kubeconfig="${LOCAL_KUBECONFIG}" create secret generic "kubeconfig" --type=Opaque --namespace="kubemark" \
     --from-file=kubelet.kubeconfig="${HOLLOWNODE_KUBECONFIG}" \
     --from-file=kubeproxy.kubeconfig="${HOLLOWNODE_KUBECONFIG}" \
     --from-file=npd.kubeconfig="${HOLLOWNODE_KUBECONFIG}" \
@@ -106,6 +109,7 @@ function create-kube-hollow-node-resources {
 
   # Create addon pods.
   # Heapster.
+  echo -e "${color_yellow}CREATING KUBEMARK HEAPSTER${color_norm}"
   mkdir -p "${RESOURCE_DIRECTORY}/addons"
   sed "s@{{MASTER_IP}}@${MASTER_IP}@g" "${RESOURCE_DIRECTORY}/heapster_template.json" > "${RESOURCE_DIRECTORY}/addons/heapster.json"
   metrics_mem_per_node=4
@@ -140,7 +144,8 @@ function create-kube-hollow-node-resources {
     sed "s@{{dns_domain}}@${KUBE_DNS_DOMAIN}@g" "${RESOURCE_DIRECTORY}/kube_dns_template.yaml" > "${RESOURCE_DIRECTORY}/addons/kube_dns.yaml"
   fi
 
-  "${KUBECTL}" create -f "${RESOURCE_DIRECTORY}/addons" --namespace="kubemark"
+  echo -e "${color_yellow}CREATING KUBEMARK Addons${color_norm}"
+  "${KUBECTL}" --kubeconfig="${LOCAL_KUBECONFIG}" create -f "${RESOURCE_DIRECTORY}/addons" --namespace="kubemark"
 
   # Create the replication controller for hollow-nodes.
   # We allow to override the NUM_REPLICAS when running Cluster Autoscaler.
@@ -172,7 +177,8 @@ function create-kube-hollow-node-resources {
   sed -i'' -e "s@{{hollow_kubelet_params}}@${hollow_kubelet_params}@g" "${RESOURCE_DIRECTORY}/hollow-node.yaml"
   sed -i'' -e "s@{{hollow_proxy_params}}@${hollow_proxy_params}@g" "${RESOURCE_DIRECTORY}/hollow-node.yaml"
   sed -i'' -e "s@{{kubemark_mig_config}}@${KUBEMARK_MIG_CONFIG:-}@g" "${RESOURCE_DIRECTORY}/hollow-node.yaml"
-  "${KUBECTL}" create -f "${RESOURCE_DIRECTORY}/hollow-node.yaml" --namespace="kubemark"
+  echo -e "${color_yellow}CREATING KUBEMARK HOLLOW NODES FROM YAML${color_norm}"
+  "${KUBECTL}" --kubeconfig="${LOCAL_KUBECONFIG}" create -f "${RESOURCE_DIRECTORY}/hollow-node.yaml" --namespace="kubemark"
 
   echo "Created secrets, configMaps, replication-controllers required for hollow-nodes."
 }
@@ -221,6 +227,7 @@ function start-hollow-nodes {
   # shellcheck disable=SC2154 # Color defined in sourced script
   echo -e "${color_yellow}STARTING SETUP FOR HOLLOW-NODES${color_norm}"
   create-and-upload-hollow-node-image
+  echo -e "${color_yellow}CREATING HOLLOW-NODE RESOURCES${color_norm}"
   create-kube-hollow-node-resources
   wait-for-hollow-nodes-to-run-or-timeout
 }

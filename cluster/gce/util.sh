@@ -24,6 +24,8 @@ KUBE_ROOT=$(dirname "${BASH_SOURCE}")/../..
 source "${KUBE_ROOT}/cluster/gce/${KUBE_CONFIG_FILE-"config-default.sh"}"
 source "${KUBE_ROOT}/cluster/common.sh"
 source "${KUBE_ROOT}/hack/lib/util.sh"
+echo "Kube root is:  ${KUBE_ROOT}" >&2
+echo "Kube config file is:  ${KUBE_CONFIG_FILE-}" >&2
 
 if [[ "${NODE_OS_DISTRIBUTION}" == "gci" || "${NODE_OS_DISTRIBUTION}" == "ubuntu" || "${NODE_OS_DISTRIBUTION}" == "custom" ]]; then
   source "${KUBE_ROOT}/cluster/gce/${NODE_OS_DISTRIBUTION}/node-helper.sh"
@@ -2232,6 +2234,7 @@ function create-node-template() {
   local metadata_flag="${metadata_values:+--metadata ${metadata_values}}"
 
   local attempt=1
+  echo "create node template... NODE_SERVICE_ACCOUNT ${NODE_SERVICE_ACCOUNT}" >&2
   while true; do
     echo "Attempt ${attempt} to create ${1}" >&2
     if ! ${gcloud} compute instance-templates create \
@@ -2287,8 +2290,10 @@ function kube-up() {
 
   # ensure that environmental variables specifying number of migs to create
   set_num_migs
+  echo "NUM_MIGS is ${NUM_MIGS}"
 
   if [[ ${KUBE_USE_EXISTING_MASTER:-} == "true" ]]; then
+    echo "KUBE USE EXISTING MASTER"
     detect-master
     parse-master-env
     create-subnetworks
@@ -2303,6 +2308,7 @@ function kube-up() {
       return 1
     fi
     if [[ ${GCE_PRIVATE_CLUSTER:-} == "true" ]]; then
+      echo "GCE PRIVEAT CLUSTER"
       create-internal-loadbalancer
     fi
     create-loadbalancer
@@ -2312,6 +2318,7 @@ function kube-up() {
       remove-replica-from-etcd 4002 false || true
     fi
   else
+    echo "got in this else"
     check-existing
     create-network
     create-subnetworks
@@ -2323,8 +2330,10 @@ function kube-up() {
     create-master
     create-nodes-firewall
     create-nodes-template
+    echo "KUBE CREATE NODES ${KUBE_CREATE_NODES}"
     if [[ "${KUBE_CREATE_NODES}" == "true" ]]; then
       # Windows nodes take longer to boot and setup so create them first.
+      echo "KUBE CREATE NODES"
       create-windows-nodes
       create-linux-nodes
     fi
@@ -3114,11 +3123,14 @@ function create-nodes-template() {
 function set_num_migs() {
   local defaulted_max_instances_per_mig=${MAX_INSTANCES_PER_MIG:-1000}
 
+  echo "defaulted max instances per mig  ${defaulted_max_instances_per_mig}"
+
   if [[ ${defaulted_max_instances_per_mig} -le "0" ]]; then
     echo "MAX_INSTANCES_PER_MIG cannot be negative. Assuming default 1000"
     defaulted_max_instances_per_mig=1000
   fi
   export NUM_MIGS=$(((${NUM_NODES} + ${defaulted_max_instances_per_mig} - 1) / ${defaulted_max_instances_per_mig}))
+  echo "NUM_MIGS ${NUM_MIGS}"
   export NUM_WINDOWS_MIGS=$(((${NUM_WINDOWS_NODES} + ${defaulted_max_instances_per_mig} - 1) / ${defaulted_max_instances_per_mig}))
 }
 
@@ -3129,10 +3141,14 @@ function set_num_migs() {
 # - PROJECT
 # - ZONE
 function create-linux-nodes() {
+  echo "Creating linux nodes"
   local template_name="${NODE_INSTANCE_PREFIX}-template"
   local extra_template_name="${NODE_INSTANCE_PREFIX}-extra-template"
+  echo "Creating linux nodes template name is ${NODE_INSTANCE_PREFIX}-template"
+  echo "extra_template_name=${NODE_INSTANCE_PREFIX}-extra-template"
 
   local nodes="${NUM_NODES}"
+  echo "NUM_NODES ${NUM_NODES}"
   if [[ ! -z "${HEAPSTER_MACHINE_TYPE:-}" ]]; then
     echo "Creating a special node for heapster with machine-type ${HEAPSTER_MACHINE_TYPE}"
     create-heapster-node
@@ -3166,6 +3182,7 @@ function create-linux-nodes() {
 
   local instances_left=${nodes}
 
+  echo "Num Migs is : ${NUM_MIGS}"
   for ((i=1; i<=${NUM_MIGS}; i++)); do
     local group_name="${NODE_INSTANCE_PREFIX}-group-$i"
     if [[ $i == ${NUM_MIGS} ]]; then
@@ -3176,6 +3193,8 @@ function create-linux-nodes() {
     # Spread the remaining number of nodes evenly
     this_mig_size=$((${instances_left} / (${NUM_MIGS}-${i}+1)))
     instances_left=$((instances_left-${this_mig_size}))
+    echo "this_mig_size ${this_mig_size}"
+    echo "instances_left ${instances_left}"
 
     # Run instance-groups creation in parallel.
     {
